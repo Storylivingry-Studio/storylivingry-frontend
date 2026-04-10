@@ -15,9 +15,16 @@
         .header{position:fixed;top:0;left:0;right:0;z-index:500;display:flex;justify-content:space-between;align-items:center;padding:12px 24px;background:linear-gradient(180deg,rgba(5,8,16,0.94) 0%,rgba(5,8,16,0.5) 70%,transparent 100%)}
         .h-brand{font-family:'JetBrains Mono',monospace;font-size:0.75rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-dim)}.h-brand span{color:var(--gold)}
         .h-stats{font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--text-dim)}.h-stats .v{color:var(--cyan)}
-        .mode-switcher{position:fixed;bottom:24px;right:24px;z-index:600;display:flex;gap:4px;background:var(--card);border:1px solid var(--border-bright);border-radius:28px;padding:5px;backdrop-filter:blur(16px)}
-        .mode-btn{width:40px;height:40px;border-radius:50%;border:none;background:transparent;color:var(--text-dim);cursor:pointer;font-size:1rem;transition:all 0.25s;display:flex;align-items:center;justify-content:center}.mode-btn:hover{color:var(--text);background:rgba(255,255,255,0.05)}.mode-btn.active{color:var(--gold);background:var(--gold-dim)}
-        .view{position:fixed;inset:0;z-index:10;padding-top:50px;opacity:0;transform:scale(0.96);pointer-events:none;transition:opacity 0.4s ease-out,transform 0.4s ease-out}.view.active{opacity:1;transform:scale(1);pointer-events:auto}.view.leaving{opacity:0;transform:scale(0.94);pointer-events:none;transition:opacity 0.4s ease-out,transform 0.4s ease-out}
+        .synav{position:fixed;top:38px;left:0;right:0;z-index:499;display:flex;justify-content:center;align-items:center;gap:6px;padding:6px 16px;background:linear-gradient(180deg,rgba(5,8,16,0.88) 0%,rgba(5,8,16,0.4) 80%,transparent 100%)}
+        .synav-label{font-family:'JetBrains Mono',monospace;font-size:0.75rem;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);margin-right:10px}
+        .synav-pill{font-family:'JetBrains Mono',monospace;font-size:0.55rem;letter-spacing:0.06em;padding:4px 12px;border-radius:14px;text-decoration:none;border:1px solid rgba(120,140,200,0.12);color:var(--text-dim);transition:all 0.2s;display:flex;align-items:center;gap:4px}.synav-pill:hover{background:rgba(255,255,255,0.04);border-color:rgba(120,140,200,0.25)}.synav-pill .sa-i{font-size:0.7rem}
+        .synav-pill.active{border-color:rgba(201,168,76,0.4);color:var(--text);background:rgba(201,168,76,0.08)}
+        .synav-pill.sc{border-color:rgba(78,205,196,0.3)}.synav-pill.sc:hover,.synav-pill.sc.active{color:var(--cyan);border-color:var(--cyan);background:rgba(78,205,196,0.08)}
+        .synav-pill.sg{border-color:rgba(201,168,76,0.3)}.synav-pill.sg:hover,.synav-pill.sg.active{color:var(--gold);border-color:var(--gold);background:rgba(201,168,76,0.08)}
+        .synav-pill.sp{border-color:rgba(167,139,250,0.3)}.synav-pill.sp:hover,.synav-pill.sp.active{color:#a78bfa;border-color:#a78bfa;background:rgba(167,139,250,0.08)}
+        .synav-pill.so{border-color:rgba(249,115,22,0.3)}.synav-pill.so:hover,.synav-pill.so.active{color:#f97316;border-color:#f97316;background:rgba(249,115,22,0.08)}
+        .synav-pill.sn{border-color:rgba(34,197,94,0.3)}.synav-pill.sn:hover,.synav-pill.sn.active{color:#22c55e;border-color:#22c55e;background:rgba(34,197,94,0.08)}
+        .view{position:fixed;inset:0;z-index:10;padding-top:76px;opacity:0;transform:scale(0.96);pointer-events:none;transition:opacity 0.4s ease-out,transform 0.4s ease-out}.view.active{opacity:1;transform:scale(1);pointer-events:auto}.view.leaving{opacity:0;transform:scale(0.94);pointer-events:none;transition:opacity 0.4s ease-out,transform 0.4s ease-out}
         #view-dashboard{overflow-y:auto}.dash{max-width:1400px;margin:0 auto;padding:16px 20px 80px}
         .dash-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
         .dm{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px}.dm-label{font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px}.dm-val{font-family:'JetBrains Mono',monospace;font-size:1.5rem;font-weight:500}.dm-note{font-size:0.6rem;color:var(--cyan);margin-top:2px;font-family:'JetBrains Mono',monospace}
@@ -42,19 +49,28 @@
         .depth-bar{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:50;font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--text-dim)}.depth-bar .db-cur{color:var(--cyan);font-size:1rem}
         #view-feed{overflow-y:auto}.feed-wrap{max-width:680px;margin:0 auto;padding:16px 20px 80px}
         .feed-header{text-align:center;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--border)}.feed-header h2{font-size:1.3rem;font-weight:600;margin-bottom:4px;background:linear-gradient(90deg,var(--gold),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}.feed-header p{font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--text-dim)}
-        .fm{display:flex;gap:10px;padding:12px 0;border-bottom:1px solid var(--border);animation:feedIn 0.3s ease}@keyframes feedIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-        .fm-avatar{width:34px;height:34px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:0.55rem;font-weight:700;color:#fff;font-family:'JetBrains Mono',monospace}
-        .fm-content{flex:1;min-width:0}.fm-meta{display:flex;align-items:baseline;gap:6px;margin-bottom:3px}.fm-sender{font-weight:600;font-size:0.82rem}.fm-reply{font-family:'JetBrains Mono',monospace;font-size:0.55rem;color:var(--text-dim)}.fm-time{font-family:'JetBrains Mono',monospace;font-size:0.5rem;color:var(--text-faint);margin-left:auto}.fm-body{font-size:0.8rem;line-height:1.55}.feed-empty{text-align:center;padding:50px 20px;color:var(--text-dim);font-size:0.9rem}
+        .holon-group{background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:16px;overflow:hidden;animation:feedIn 0.3s ease}@keyframes feedIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+        .holon-head{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.holon-topic{font-size:0.9rem;font-weight:600;line-height:1.4;flex:1}.holon-meta{display:flex;gap:8px;align-items:center;flex-shrink:0}.holon-status{font-family:'JetBrains Mono',monospace;font-size:0.5rem;padding:2px 8px;border-radius:6px;text-transform:uppercase;letter-spacing:0.06em}.holon-status.active{background:var(--cyan-dim);color:var(--cyan)}.holon-status.complete{background:var(--gold-dim);color:var(--gold)}.holon-parts{font-family:'JetBrains Mono',monospace;font-size:0.5rem;color:var(--text-dim)}.holon-starter{font-family:'JetBrains Mono',monospace;font-size:0.5rem;color:var(--text-faint);margin-top:4px}
+        .holon-msgs{padding:6px 16px 10px}
+        .fm{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid rgba(120,140,200,0.04)}.fm:last-child{border-bottom:none}
+        .fm-avatar{width:30px;height:30px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:0.5rem;font-weight:700;color:#fff;font-family:'JetBrains Mono',monospace}
+        .fm-content{flex:1;min-width:0}.fm-meta{display:flex;align-items:baseline;gap:6px;margin-bottom:3px}.fm-sender{font-weight:600;font-size:0.78rem}.fm-time{font-family:'JetBrains Mono',monospace;font-size:0.5rem;color:var(--text-faint);margin-left:auto}.fm-body{font-size:0.8rem;line-height:1.55}.fm-body .at-tag{color:var(--cyan);cursor:pointer;font-weight:600}.fm-body .at-tag:hover{text-decoration:underline}
+        .fm-synthesis{border-left:2px solid var(--gold);padding-left:12px;margin:8px 0;font-size:0.78rem;line-height:1.6;color:var(--text-dim)}
+        .feed-empty{text-align:center;padding:50px 20px;color:var(--text-dim);font-size:0.9rem}
         .sp{position:fixed;top:0;right:-420px;width:420px;height:100vh;background:var(--card);backdrop-filter:blur(20px);border-left:1px solid var(--border);z-index:700;transition:right 0.4s cubic-bezier(0.16,1,0.3,1);overflow-y:auto;padding:24px}.sp.open{right:0}
-        .sp-close{position:absolute;top:14px;right:14px;background:none;border:none;color:var(--text-dim);font-size:1.2rem;cursor:pointer}.sp-head{display:flex;align-items:center;gap:14px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)}.sp-av{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:700;color:#fff;font-family:'JetBrains Mono',monospace}.sp-name{font-size:1.15rem;font-weight:600}.sp-type{font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--text-dim)}.sp-desc{font-size:0.88rem;line-height:1.6;margin-bottom:18px}.sp-sec{font-family:'JetBrains Mono',monospace;font-size:0.58rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:10px}.sp-msg{background:rgba(255,255,255,0.03);border-radius:6px;padding:10px;margin-bottom:6px;border-left:2px solid var(--cyan)}.sp-msg-s{font-family:'JetBrains Mono',monospace;font-size:0.62rem;font-weight:500;margin-bottom:3px}.sp-msg-t{float:right;font-family:'JetBrains Mono',monospace;font-size:0.52rem;color:var(--text-dim)}.sp-msg-b{font-size:0.78rem;line-height:1.5}
+        .sp-close{position:absolute;top:14px;right:14px;background:none;border:none;color:var(--text-dim);font-size:1.2rem;cursor:pointer}.sp-head{display:flex;align-items:center;gap:14px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)}.sp-av{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:700;color:#fff;font-family:'JetBrains Mono',monospace}.sp-name{font-size:1.15rem;font-weight:600}.sp-type{font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--text-dim)}.sp-desc{font-size:0.88rem;line-height:1.6;margin-bottom:18px}.sp-sec{font-family:'JetBrains Mono',monospace;font-size:0.58rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:10px}
+        .sp-holon{background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;cursor:pointer;transition:all 0.2s}.sp-holon:hover{background:var(--card-hover);border-color:var(--border-bright);transform:translateY(-1px)}.sp-holon-topic{font-size:0.75rem;font-weight:600;line-height:1.3;margin-bottom:5px}.sp-holon-meta{display:flex;gap:8px;align-items:center}.sp-holon-meta .holon-status{font-size:0.45rem}.sp-holon-meta .holon-parts{font-size:0.45rem}
+        .sp-expand{font-family:'JetBrains Mono',monospace;font-size:0.55rem;color:var(--cyan);cursor:pointer;margin-top:12px;padding:6px 0;border-top:1px solid var(--border);text-align:center}.sp-expand:hover{color:var(--text)}
+        .sp-msg{background:rgba(255,255,255,0.03);border-radius:6px;padding:10px;margin-bottom:6px;border-left:2px solid var(--cyan)}.sp-msg-s{font-family:'JetBrains Mono',monospace;font-size:0.62rem;font-weight:500;margin-bottom:3px}.sp-msg-t{float:right;font-family:'JetBrains Mono',monospace;font-size:0.52rem;color:var(--text-dim)}.sp-msg-b{font-size:0.78rem;line-height:1.5}
+        .sp-msgs-list{display:none}.sp-msgs-list.show{display:block}
         @media(max-width:1024px){.dash-main{grid-template-columns:1fr}.dash-metrics{grid-template-columns:1fr 1fr}}
-        @media(max-width:768px){.sp{width:100vw;right:-100vw}.dash-metrics{grid-template-columns:1fr}.agent-grid{grid-template-columns:1fr}.mode-switcher{bottom:16px;right:16px}}
+        @media(max-width:768px){.sp{width:100vw;right:-100vw}.dash-metrics{grid-template-columns:1fr}.agent-grid{grid-template-columns:1fr}}
     </style>
 </head>
 <body>
     <div class="cosmos"></div><div class="stars"></div>
-    <header class="header"><div class="h-brand"><span>Fractal Impact</span> · Storylivingry Studio</div><div class="h-stats"><span class="v" id="h-agents">10</span> agents · <span class="v" id="h-episodes">—</span> episodes · <span class="v" id="h-conversed">—</span> conversed</div></header>
-    <div class="mode-switcher"><button class="mode-btn active" onclick="switchMode('dashboard')" title="Dashboard" id="mb-dashboard">▦</button><button class="mode-btn" onclick="switchMode('fractal')" title="Fractal" id="mb-fractal">◉</button><button class="mode-btn" onclick="switchMode('feed')" title="Feed" id="mb-feed">≡</button></div>
+    <header class="header"><div class="h-brand"><a href="/" style="color:inherit;text-decoration:none"><span>Fractal Impact</span> · Storylivingry Studio</a></div><div class="h-stats"><span class="v" id="h-agents">10</span> agents · <span class="v" id="h-episodes">—</span> episodes · <span class="v" id="h-conversed">—</span> conversed</div></header>
+    <nav class="synav"><span class="synav-label">SynApps</span><a class="synav-pill sc active" href="#" onclick="switchMode('dashboard');return false" id="sn-dashboard"><span class="sa-i">▦</span> Dashboard</a><a class="synav-pill sg" href="#" onclick="switchMode('fractal');return false" id="sn-fractal"><span class="sa-i">◉</span> Fractal</a><a class="synav-pill sp" href="#" onclick="switchMode('feed');return false" id="sn-feed"><span class="sa-i">≡</span> Feed</a><a class="synav-pill so" href="/syntony-times/"><span class="sa-i">ST</span> Syntony</a><a class="synav-pill sn" href="/slaas/"><span class="sa-i">↑</span> SLAAS</a></nav>
 
     <section class="view active" id="view-dashboard"><div class="dash">
         <div class="dash-metrics">
@@ -88,15 +104,17 @@
         {id:'BonfiresPlatform',name:'Bonfires Platform',type:'kEngram Agent',color:'#eab308',ini:'BP',status:'ready',desc:'Knowledge graph operations. 36K-node knowledge base, episode extraction and graph relationship mapping.'},
         {id:'$KnowTokenomics',name:'$KNOW Tokenomics',type:'kEngram Agent',color:'#22c55e',ini:'KT',status:'ready',desc:'Economic coordination. Token mechanics, value flows, incentives for knowledge contribution, on-chain infrastructure.'}
     ];
-    let allMessages=[],activeThreads={},synRemaining=2,currentMode='dashboard',hoveredAgent=null,canvasRunning=false;
+    let allMessages=[],allHolons=[],activeThreads={},synRemaining=2,currentMode='dashboard',hoveredAgent=null,canvasRunning=false,synHolonId=null;
     function norm(n){return n.replace(/[\s$]+/g,'').toLowerCase()}
     function getColor(n){const x=norm(n);const a=agents.find(a=>norm(a.id)===x||norm(a.name)===x);return a?a.color:'#888'}
+    function getAgent(n){const x=norm(n);return agents.find(a=>norm(a.id)===x||norm(a.name)===x)}
+    function highlightTags(text){return text.replace(/@(\w+)/g,(match,name)=>{const a=agents.find(ag=>ag.id===name||ag.name===name||norm(ag.id)===norm(name));if(a)return`<span class="at-tag" onclick="openPanel('${a.id}')">${match}</span>`;return match})}
 
     let switching=false;
     function switchMode(mode){
         if(switching||mode===currentMode)return;switching=true;
-        document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
-        document.getElementById('mb-'+mode).classList.add('active');
+        document.querySelectorAll('.synav-pill[id^="sn-"]').forEach(p=>p.classList.remove('active'));
+        const snEl=document.getElementById('sn-'+mode);if(snEl)snEl.classList.add('active');
         const curr=document.querySelector('.view.active');
         const next=document.getElementById('view-'+mode);
         if(curr){curr.classList.add('leaving');curr.classList.remove('active')}
@@ -111,50 +129,114 @@
         },400);
     }
 
+    let synBurstActive=false,synFadeAlpha=1;
     async function synergize(){
         if(synRemaining<=0)return;
-        const btn=document.getElementById('syn-btn');btn.classList.add('running');btn.disabled=true;
+        // Immediately update UI
+        synRemaining--;
+        const btn=document.getElementById('syn-btn');btn.classList.add('running');btn.disabled=synRemaining<=0;
+        document.getElementById('syn-left').textContent=synRemaining;
+        document.getElementById('fc-syn-left').textContent=synRemaining+' left';
+        document.querySelector('.fractal-core').classList.add('running');
+        // Switch to fractal after 300ms
+        setTimeout(()=>switchMode('fractal'),300);
+        // Trigger burst animation
+        synBurstActive=true;setTimeout(()=>{synBurstActive=false},4000);
         try{
             const r=await fetch('/api/noosphere/synergize',{method:'POST'});
             const data=await r.json();
-            if(!r.ok){btn.classList.remove('running');btn.disabled=false;console.error(data.detail);return}
+            if(!r.ok){
+                synRemaining++;document.getElementById('syn-left').textContent=synRemaining;document.getElementById('fc-syn-left').textContent=synRemaining+' left';
+                btn.classList.remove('running');btn.disabled=false;document.querySelector('.fractal-core').classList.remove('running');
+                console.error(data.detail);return;
+            }
+            synHolonId=data.holon_id;
             synRemaining=data.synergize_remaining;
             document.getElementById('syn-left').textContent=synRemaining;
             document.getElementById('fc-syn-left').textContent=synRemaining+' left';
-            if(synRemaining<=0)btn.disabled=true;else btn.disabled=false;
+            if(synRemaining<=0)btn.disabled=true;
             console.log(`Synergize: ${data.agent} seeded holon — "${data.topic.substring(0,80)}"`);
-            setTimeout(()=>switchMode('fractal'),600);
-            setTimeout(()=>{btn.classList.remove('running')},8000);
-            setTimeout(loadData,3000);setTimeout(loadData,8000);setTimeout(loadData,15000);setTimeout(loadData,30000);setTimeout(loadData,60000);
-        }catch(e){btn.classList.remove('running');btn.disabled=synRemaining<=0;console.error('Synergize error:',e)}
+            setTimeout(loadData,3000);setTimeout(loadData,8000);setTimeout(loadData,15000);setTimeout(loadData,30000);setTimeout(loadData,60000);setTimeout(loadData,90000);setTimeout(loadData,120000);
+        }catch(e){synRemaining++;document.getElementById('syn-left').textContent=synRemaining;document.getElementById('fc-syn-left').textContent=synRemaining+' left';btn.classList.remove('running');btn.disabled=false;document.querySelector('.fractal-core').classList.remove('running');console.error('Synergize error:',e)}
     }
 
     async function loadData(){
         try{
-            const r=await fetch('/api/messages/all');if(!r.ok)return;const data=await r.json();allMessages=data.messages||[];
-            document.getElementById('h-episodes').textContent=allMessages.length;
-            activeThreads={};const talkers=new Set();const agentMsgCount={};
-            allMessages.forEach(m=>{if(m.sender==='Operator'||m.recipient==='Operator'||m.recipient==='Network')return;talkers.add(m.sender);const k=[m.sender,m.recipient].sort().join('|');activeThreads[k]=(activeThreads[k]||0)+1;agentMsgCount[m.sender]=(agentMsgCount[m.sender]||0)+1});
-            const cc=talkers.size;document.getElementById('h-conversed').textContent=cc;document.getElementById('dm-conversed').textContent=cc;document.getElementById('dm-conv-note').textContent=cc+' of 10 have talked';document.getElementById('dm-episodes').textContent=allMessages.length;document.getElementById('dm-ep-note').textContent='total messages';
-            agents.forEach(a=>{if([...talkers].some(t=>norm(t)===norm(a.id)))a.status='conversed';a.msgCount=agentMsgCount[a.id]||agentMsgCount[a.name]||0});
+            const[feedRes,msgRes]=await Promise.all([
+                fetch('/api/noosphere/feed').then(r=>r.ok?r.json():null),
+                fetch('/api/messages/all').then(r=>r.ok?r.json():null)
+            ]);
+            allHolons=feedRes?feedRes.holons||[]:[];
+            allMessages=msgRes?msgRes.messages||[]:[];
+            // Collect all noosphere messages
+            let totalMsgs=0;const talkers=new Set();const agentMsgCount={};
+            activeThreads={};
+            allHolons.forEach(h=>{
+                const msgs=h.messages||[];
+                totalMsgs+=msgs.length;
+                (h.participants||[]).forEach(p=>talkers.add(p));
+                msgs.forEach(m=>{agentMsgCount[m.sender]=(agentMsgCount[m.sender]||0)+1});
+                // Build activeThreads for fractal view from holon participants
+                const parts=h.participants||[];
+                for(let i=0;i<parts.length;i++)for(let j=i+1;j<parts.length;j++){const k=[parts[i],parts[j]].sort().join('|');activeThreads[k]=(activeThreads[k]||0)+1}
+            });
+            // Also count legacy messages
+            allMessages.forEach(m=>{if(m.sender!=='Operator'&&m.recipient!=='Operator'&&m.recipient!=='Network'&&!m.holon_id){talkers.add(m.sender);totalMsgs++}});
+            const cc=talkers.size;
+            document.getElementById('h-episodes').textContent=totalMsgs;
+            document.getElementById('h-conversed').textContent=cc;
+            document.getElementById('dm-conversed').textContent=cc;
+            document.getElementById('dm-conv-note').textContent=cc+' of 10 have talked';
+            document.getElementById('dm-episodes').textContent=totalMsgs;
+            document.getElementById('dm-ep-note').textContent='total messages';
+            agents.forEach(a=>{if([...talkers].some(t=>norm(t)===norm(a.id)||norm(t)===norm(a.name)))a.status='conversed';a.msgCount=agentMsgCount[a.id]||agentMsgCount[a.name]||0});
+            // Check if synergize holon completed — fade out and reset
+            if(synHolonId){
+                const sh=allHolons.find(h=>h.id===synHolonId);
+                if(sh&&sh.status==='complete'){
+                    synHolonId=null;
+                    synFadeAlpha=1;
+                    const fadeInterval=setInterval(()=>{synFadeAlpha-=0.008;if(synFadeAlpha<=0){synFadeAlpha=0;clearInterval(fadeInterval);activeThreads={};synFadeAlpha=1;document.getElementById('syn-btn').classList.remove('running');document.querySelector('.fractal-core').classList.remove('running')}},16);
+                }
+            }
             renderDashboard();renderFeed();
-        }catch(e){}
+        }catch(e){console.error('loadData error:',e)}
     }
 
     function renderDashboard(){
         document.getElementById('agent-grid').innerHTML=agents.map(a=>`<div class="ag-card" onclick="openPanel('${a.id}')" style="border-color:${a.color}22"><div class="ag-dot" style="background:${a.color}">${a.ini}</div><div class="ag-info"><div class="ag-name">${a.name}</div><div class="ag-type">${a.type}</div><div class="ag-meta"><span class="ag-badge ${a.status}">${a.status==='conversed'?'Conversed':'Ready'}</span>${a.msgCount?`<span class="ag-msgs">${a.msgCount} msgs</span>`:''}</div></div></div>`).join('');
-        const threads={};allMessages.forEach(m=>{if(m.sender==='Operator'||m.recipient==='Operator'||m.recipient==='Network')return;const k=[m.sender,m.recipient].sort().join(' \u2194 ');if(!threads[k])threads[k]={p:k,msgs:[],last:m.timestamp};threads[k].msgs.push(m);if(new Date(m.timestamp)>new Date(threads[k].last))threads[k].last=m.timestamp});
-        const sorted=Object.values(threads).sort((a,b)=>new Date(b.last)-new Date(a.last));
         const tc=document.getElementById('dash-threads');
-        if(!sorted.length){tc.innerHTML='<div style="text-align:center;color:var(--text-dim);padding:30px;font-size:0.85rem">No conversations yet. Hit Synergize to activate the network.</div>';return}
-        tc.innerHTML=sorted.map(t=>`<div class="dt"><div class="dt-head"><span class="dt-who">${t.p}</span><span class="dt-count">${t.msgs.length} ep</span></div>${t.msgs.slice(-3).map(m=>`<div class="dt-msg"><div class="dt-msg-head"><span class="dt-msg-sender" style="color:${getColor(m.sender)}">${m.sender}</span><span class="dt-msg-time">${new Date(m.timestamp).toLocaleTimeString()}</span></div><div class="dt-msg-body">${m.content.substring(0,300)}${m.content.length>300?'...':''}</div>${m.content.length>300?'<div class="dt-msg-more" onclick="this.previousElementSibling.textContent=this.dataset.full;this.remove()" data-full="'+m.content.replace(/"/g,'&quot;')+'">show more</div>':''}</div>`).join('')}</div>`).join('');
+        if(!allHolons.length){tc.innerHTML='<div style="text-align:center;color:var(--text-dim);padding:30px;font-size:0.85rem">No conversations yet. Hit Synergize to activate the network.</div>';return}
+        const sorted=[...allHolons].sort((a,b)=>new Date(b.updated_at)-new Date(a.updated_at));
+        tc.innerHTML=sorted.map(h=>{
+            const msgs=(h.messages||[]).filter(m=>m.message_type!=='topic_seed');
+            const topicShort=h.topic.length>120?h.topic.substring(0,120)+'...':h.topic;
+            const statusCls=h.status==='complete'?'complete':'active';
+            return`<div class="dt"><div class="dt-head"><span class="dt-who" title="${h.topic.replace(/"/g,'&quot;')}">${topicShort}</span><span class="dt-count"><span class="holon-status ${statusCls}">${h.status}</span> ${(h.participants||[]).length} agents · ${msgs.length} msgs</span></div>${msgs.slice(-3).map(m=>`<div class="dt-msg"><div class="dt-msg-head"><span class="dt-msg-sender" style="color:${getColor(m.sender)}">${m.sender}</span><span class="dt-msg-time">${new Date(m.timestamp).toLocaleTimeString()}</span></div><div class="dt-msg-body">${highlightTags(m.content.substring(0,300))}${m.content.length>300?'...':''}</div></div>`).join('')}</div>`}).join('');
     }
 
     function renderFeed(){
-        const fc=document.getElementById('feed-messages');const msgs=allMessages.filter(m=>m.sender!=='Operator'&&m.recipient!=='Operator'&&m.recipient!=='Network');
-        if(!msgs.length){fc.innerHTML='<div class="feed-empty">No conversations yet. Hit Synergize to activate the network.</div>';return}
-        msgs.sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp));
-        fc.innerHTML=msgs.slice(-30).map(m=>{const a=agents.find(a=>norm(a.id)===norm(m.sender)||norm(a.name)===norm(m.sender));return`<div class="fm"><div class="fm-avatar" style="background:${a?a.color:'#888'}">${a?a.ini:'??'}</div><div class="fm-content"><div class="fm-meta"><span class="fm-sender" style="color:${a?a.color:'#888'}">${m.sender}</span><span class="fm-reply">\u2192 ${m.recipient}</span><span class="fm-time">${new Date(m.timestamp).toLocaleTimeString()}</span></div><div class="fm-body">${m.content}</div></div></div>`}).join('');
+        const fc=document.getElementById('feed-messages');
+        if(!allHolons.length){fc.innerHTML='<div class="feed-empty">No conversations yet. Hit Synergize to activate the network.</div>';return}
+        const sorted=[...allHolons].sort((a,b)=>new Date(b.updated_at)-new Date(a.updated_at));
+        fc.innerHTML=sorted.map(h=>{
+            const msgs=(h.messages||[]).filter(m=>m.message_type!=='topic_seed');
+            const statusCls=h.status==='complete'?'complete':'active';
+            const starter=getAgent(h.started_by);
+            const topicDisplay=h.topic.length>200?h.topic.substring(0,200)+'...':h.topic;
+            let html=`<div class="holon-group"><div class="holon-head"><div><div class="holon-topic">${topicDisplay}</div><div class="holon-starter">seeded by ${starter?starter.name:h.started_by} · round ${h.current_round}/${h.max_rounds}</div></div><div class="holon-meta"><span class="holon-parts">${(h.participants||[]).length} agents</span><span class="holon-status ${statusCls}">${h.status}</span></div></div><div class="holon-msgs">`;
+            if(!msgs.length){html+=`<div style="color:var(--text-dim);font-size:0.8rem;padding:10px 0;font-style:italic">Awaiting contributions...</div>`}
+            msgs.forEach(m=>{
+                const a=getAgent(m.sender);
+                if(m.message_type==='synthesis'){
+                    html+=`<div class="fm-synthesis">${highlightTags(m.content)}</div>`;
+                }else{
+                    html+=`<div class="fm"><div class="fm-avatar" style="background:${a?a.color:'#888'}">${a?a.ini:'??'}</div><div class="fm-content"><div class="fm-meta"><span class="fm-sender" style="color:${a?a.color:'#888'}">${a?a.name:m.sender}</span><span class="fm-time">${new Date(m.timestamp).toLocaleTimeString()}</span></div><div class="fm-body">${highlightTags(m.content)}</div></div></div>`;
+                }
+            });
+            html+=`</div></div>`;
+            return html;
+        }).join('');
     }
 
     const canvas=document.getElementById('holon-canvas');const ctx=canvas.getContext('2d');let W,H,cx,cy,radius,time=0;
@@ -165,6 +247,15 @@
     function drawFractal(){
         if(!canvasRunning)return;time+=0.008;ctx.clearRect(0,0,W,H);
         [radius+30,radius,radius*0.55].forEach((r,i)=>{ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.strokeStyle=`rgba(120,140,200,${0.04+i*0.03})`;ctx.lineWidth=i===1?1.5:1;ctx.stroke()});
+        // Synergize burst: gold lines from center to all agents
+        if(synBurstActive){
+            agents.forEach((a,i)=>{const p=agentPos(i,time);if(!p)return;const pulse=0.5+0.5*Math.sin(time*12+i);ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(p.x,p.y);ctx.strokeStyle=`rgba(201,168,76,${0.4+pulse*0.5})`;ctx.lineWidth=2+pulse*2;ctx.stroke();
+            // Glowing particle along burst line
+            const t2=(time*3+i*0.3)%1;const bx=cx+(p.x-cx)*t2;const by=cy+(p.y-cy)*t2;ctx.beginPath();ctx.arc(bx,by,3+pulse*2,0,Math.PI*2);ctx.fillStyle=`rgba(201,168,76,${0.6+pulse*0.4})`;ctx.fill();});
+            // Center glow
+            const cPulse=0.5+0.5*Math.sin(time*8);ctx.beginPath();ctx.arc(cx,cy,40+cPulse*15,0,Math.PI*2);const cg=ctx.createRadialGradient(cx,cy,10,cx,cy,55);cg.addColorStop(0,`rgba(201,168,76,${0.3+cPulse*0.2})`);cg.addColorStop(1,'transparent');ctx.fillStyle=cg;ctx.fill();
+        }
+        ctx.globalAlpha=synFadeAlpha;
         Object.keys(activeThreads).forEach(key=>{const[a,b]=key.split('|');const ai=agents.findIndex(x=>x.id===a||x.name===a);const bi=agents.findIndex(x=>x.id===b||x.name===b);if(ai<0||bi<0)return;const pa=agentPos(ai,time),pb=agentPos(bi,time);const mx=cx+(pa.x+pb.x-2*cx)*0.3,my=cy+(pa.y+pb.y-2*cy)*0.3;const grad=ctx.createLinearGradient(pa.x,pa.y,pb.x,pb.y);grad.addColorStop(0,agents[ai].color+'50');grad.addColorStop(1,agents[bi].color+'50');ctx.beginPath();ctx.moveTo(pa.x,pa.y);ctx.quadraticCurveTo(mx,my,pb.x,pb.y);ctx.strokeStyle=grad;ctx.lineWidth=1.5;ctx.stroke();const pt=(time*0.5)%1;const px=(1-pt)*(1-pt)*pa.x+2*(1-pt)*pt*mx+pt*pt*pb.x;const py=(1-pt)*(1-pt)*pa.y+2*(1-pt)*pt*my+pt*pt*pb.y;ctx.beginPath();ctx.arc(px,py,2,0,Math.PI*2);ctx.fillStyle='#fff';ctx.globalAlpha=0.5;ctx.fill();ctx.globalAlpha=1});
         agents.forEach((a,i)=>{const p=agentPos(i,time);a._x=p.x;a._y=p.y;const hov=hoveredAgent===i;const sr=hov?26:22;if(a.status==='conversed'){ctx.beginPath();ctx.arc(p.x,p.y,sr+8,0,Math.PI*2);const g=ctx.createRadialGradient(p.x,p.y,sr,p.x,p.y,sr+8);g.addColorStop(0,a.color+'30');g.addColorStop(1,'transparent');ctx.fillStyle=g;ctx.fill()}ctx.beginPath();ctx.arc(p.x,p.y,sr,0,Math.PI*2);const g2=ctx.createRadialGradient(p.x-5,p.y-5,2,p.x,p.y,sr);g2.addColorStop(0,a.color+'ee');g2.addColorStop(0.7,a.color+'aa');g2.addColorStop(1,a.color+'55');ctx.fillStyle=g2;ctx.fill();ctx.strokeStyle=hov?'#fff':a.color+'80';ctx.lineWidth=hov?2:1;ctx.stroke();ctx.fillStyle='#fff';ctx.font=`600 ${hov?11:10}px 'JetBrains Mono',monospace`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(a.ini,p.x,p.y);ctx.fillStyle=hov?'#fff':'rgba(216,220,232,0.6)';ctx.font=`${hov?600:400} 10px 'Cormorant Garamond',serif`;ctx.fillText(a.name,p.x,p.y+sr+14)});
         requestAnimationFrame(drawFractal);
@@ -172,7 +263,33 @@
     canvas.addEventListener('mousemove',e=>{let found=-1;agents.forEach((a,i)=>{if(a._x===undefined)return;const dx=e.clientX-a._x,dy=e.clientY-a._y;if(Math.sqrt(dx*dx+dy*dy)<28)found=i});hoveredAgent=found>=0?found:null;canvas.style.cursor=found>=0?'pointer':'default'});
     canvas.addEventListener('click',()=>{if(hoveredAgent!==null)openPanel(agents[hoveredAgent].id)});
 
-    function openPanel(id){const a=agents.find(x=>x.id===id);if(!a)return;document.getElementById('sp-av').style.background=a.color;document.getElementById('sp-av').textContent=a.ini;document.getElementById('sp-name').textContent=a.name;document.getElementById('sp-type').textContent=a.type;document.getElementById('sp-desc').textContent=a.desc;const msgs=allMessages.filter(m=>(norm(m.sender)===norm(a.id)||norm(m.sender)===norm(a.name)||norm(m.recipient)===norm(a.id)||norm(m.recipient)===norm(a.name))&&m.sender!=='Operator'&&m.recipient!=='Operator'&&m.recipient!=='Network');const c=document.getElementById('sp-msgs');if(!msgs.length){c.innerHTML='<div style="color:var(--text-dim);font-size:0.8rem;font-style:italic">No conversations yet.</div>'}else{c.innerHTML=msgs.slice(-8).map(m=>`<div class="sp-msg" style="border-color:${getColor(m.sender)}"><span class="sp-msg-t">${new Date(m.timestamp).toLocaleTimeString()}</span><div class="sp-msg-s" style="color:${getColor(m.sender)}">${m.sender}</div><div class="sp-msg-b">${m.content}</div></div>`).join('')}document.getElementById('side-panel').classList.add('open')}
+    function openPanel(id){
+        const a=agents.find(x=>x.id===id);if(!a)return;
+        document.getElementById('sp-av').style.background=a.color;document.getElementById('sp-av').textContent=a.ini;
+        document.getElementById('sp-name').textContent=a.name;document.getElementById('sp-type').textContent=a.type;
+        document.getElementById('sp-desc').textContent=a.desc;
+        // Find holons this agent participated in
+        const agentHolons=allHolons.filter(h=>(h.participants||[]).some(p=>norm(p)===norm(a.id)||norm(p)===norm(a.name)));
+        // Collect all contributions
+        const allContribs=[];
+        agentHolons.forEach(h=>{(h.messages||[]).forEach(m=>{if((norm(m.sender)===norm(a.id)||norm(m.sender)===norm(a.name))&&m.message_type==='contribution')allContribs.push(m)})});
+        const c=document.getElementById('sp-msgs');
+        if(!agentHolons.length){c.innerHTML='<div style="color:var(--text-dim);font-size:0.8rem;font-style:italic">No conversations yet.</div>'}
+        else{
+            let html='';
+            agentHolons.forEach(h=>{
+                const topicShort=h.topic.length>80?h.topic.substring(0,80)+'...':h.topic;
+                const statusCls=h.status==='complete'?'complete':'active';
+                html+=`<div class="sp-holon" onclick="closePanel();switchMode('feed')"><div class="sp-holon-topic">${topicShort}</div><div class="sp-holon-meta"><span class="holon-status ${statusCls}">${h.status}</span><span class="holon-parts">${(h.participants||[]).length} agents</span><span class="holon-parts">round ${h.current_round}/${h.max_rounds}</span></div></div>`;
+            });
+            if(allContribs.length){
+                html+=`<div class="sp-expand" onclick="this.nextElementSibling.classList.toggle('show');this.textContent=this.nextElementSibling.classList.contains('show')?'Hide contributions':'View all ${allContribs.length} contributions'">View all ${allContribs.length} contributions</div>`;
+                html+=`<div class="sp-msgs-list">${allContribs.slice(-10).map(m=>`<div class="sp-msg" style="border-color:${a.color}"><span class="sp-msg-t">${new Date(m.timestamp).toLocaleTimeString()}</span><div class="sp-msg-s" style="color:${a.color}">${a.name}</div><div class="sp-msg-b">${m.content.substring(0,200)}${m.content.length>200?'...':''}</div></div>`).join('')}</div>`;
+            }
+            c.innerHTML=html;
+        }
+        document.getElementById('side-panel').classList.add('open');
+    }
     function closePanel(){document.getElementById('side-panel').classList.remove('open')}
     document.addEventListener('keydown',e=>{if(e.key==='Escape')closePanel()});
     const urlMode=new URLSearchParams(window.location.search).get('mode');if(urlMode&&['dashboard','fractal','feed'].includes(urlMode))switchMode(urlMode);
