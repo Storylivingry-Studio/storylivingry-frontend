@@ -17,7 +17,7 @@
         .h-stats{font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--text-dim)}.h-stats .v{color:var(--cyan)}
         .mode-switcher{position:fixed;bottom:24px;right:24px;z-index:600;display:flex;gap:4px;background:var(--card);border:1px solid var(--border-bright);border-radius:28px;padding:5px;backdrop-filter:blur(16px)}
         .mode-btn{width:40px;height:40px;border-radius:50%;border:none;background:transparent;color:var(--text-dim);cursor:pointer;font-size:1rem;transition:all 0.25s;display:flex;align-items:center;justify-content:center}.mode-btn:hover{color:var(--text);background:rgba(255,255,255,0.05)}.mode-btn.active{color:var(--gold);background:var(--gold-dim)}
-        .view{position:fixed;inset:0;z-index:10;padding-top:50px;opacity:0;transform:scale(0.97);pointer-events:none;transition:opacity 0.35s ease,transform 0.35s ease}.view.active{opacity:1;transform:scale(1);pointer-events:auto}
+        .view{position:fixed;inset:0;z-index:10;padding-top:50px;opacity:0;transform:scale(0.96);pointer-events:none;transition:opacity 0.4s ease-out,transform 0.4s ease-out}.view.active{opacity:1;transform:scale(1);pointer-events:auto}.view.leaving{opacity:0;transform:scale(0.94);pointer-events:none;transition:opacity 0.4s ease-out,transform 0.4s ease-out}
         #view-dashboard{overflow-y:auto}.dash{max-width:1400px;margin:0 auto;padding:16px 20px 80px}
         .dash-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
         .dm{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px}.dm-label{font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px}.dm-val{font-family:'JetBrains Mono',monospace;font-size:1.5rem;font-weight:500}.dm-note{font-size:0.6rem;color:var(--cyan);margin-top:2px;font-family:'JetBrains Mono',monospace}
@@ -92,28 +92,41 @@
     function norm(n){return n.replace(/[\s$]+/g,'').toLowerCase()}
     function getColor(n){const x=norm(n);const a=agents.find(a=>norm(a.id)===x||norm(a.name)===x);return a?a.color:'#888'}
 
+    let switching=false;
     function switchMode(mode){
-        document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+        if(switching||mode===currentMode)return;switching=true;
         document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
-        document.getElementById('view-'+mode).classList.add('active');
         document.getElementById('mb-'+mode).classList.add('active');
-        currentMode=mode;
-        if(mode==='fractal'&&!canvasRunning){canvasRunning=true;drawFractal()}
-        else if(mode!=='fractal'){canvasRunning=false}
-        const url=new URL(window.location);url.searchParams.set('mode',mode);history.replaceState({},'',url);
+        const curr=document.querySelector('.view.active');
+        const next=document.getElementById('view-'+mode);
+        if(curr){curr.classList.add('leaving');curr.classList.remove('active')}
+        setTimeout(()=>{
+            if(curr)curr.classList.remove('leaving');
+            next.classList.add('active');
+            currentMode=mode;
+            if(mode==='fractal'&&!canvasRunning){canvasRunning=true;drawFractal()}
+            else if(mode!=='fractal'){canvasRunning=false}
+            const url=new URL(window.location);url.searchParams.set('mode',mode);history.replaceState({},'',url);
+            switching=false;
+        },400);
     }
 
-    function synergize(){
-        if(synRemaining<=0)return;synRemaining--;
-        document.getElementById('syn-left').textContent=synRemaining;
-        document.getElementById('fc-syn-left').textContent=synRemaining+' left';
-        const btn=document.getElementById('syn-btn');btn.classList.add('running');
-        if(synRemaining<=0)btn.disabled=true;
-        setTimeout(()=>switchMode('fractal'),600);
-        const pairs=[['BuckminsterFuller','Buckminster Fuller','DesignScienceStudio','Design Science Studio'],['TheTenThousand','The Ten Thousand','SyntonyTimes','Syntony Times'],['XPRIZEFutureVision','XPRIZE Future Vision','BonfiresPlatform','Bonfires Platform'],['$KnowTokenomics','$KNOW Tokenomics','Metabolite','Metabolite'],['Trimtab','Trimtab','AndrewAlan','Andrew Alan']];
-        pairs.forEach((p,i)=>{setTimeout(()=>{fetch('/api/messages/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sender:p[0],recipient:p[2],content:`[${p[1]} reaching out to ${p[3]}] I've been studying the knowledge graph and I see deep connections between our domains. What unexpected patterns are you finding? What should we build together?`,message_type:'chat'})})},i*800)});
-        setTimeout(()=>{btn.classList.remove('running')},12000);
-        setTimeout(loadData,5000);setTimeout(loadData,10000);setTimeout(loadData,20000);
+    async function synergize(){
+        if(synRemaining<=0)return;
+        const btn=document.getElementById('syn-btn');btn.classList.add('running');btn.disabled=true;
+        try{
+            const r=await fetch('/api/noosphere/synergize',{method:'POST'});
+            const data=await r.json();
+            if(!r.ok){btn.classList.remove('running');btn.disabled=false;console.error(data.detail);return}
+            synRemaining=data.synergize_remaining;
+            document.getElementById('syn-left').textContent=synRemaining;
+            document.getElementById('fc-syn-left').textContent=synRemaining+' left';
+            if(synRemaining<=0)btn.disabled=true;else btn.disabled=false;
+            console.log(`Synergize: ${data.agent} seeded holon — "${data.topic.substring(0,80)}"`);
+            setTimeout(()=>switchMode('fractal'),600);
+            setTimeout(()=>{btn.classList.remove('running')},8000);
+            setTimeout(loadData,3000);setTimeout(loadData,8000);setTimeout(loadData,15000);setTimeout(loadData,30000);setTimeout(loadData,60000);
+        }catch(e){btn.classList.remove('running');btn.disabled=synRemaining<=0;console.error('Synergize error:',e)}
     }
 
     async function loadData(){
