@@ -193,74 +193,13 @@
     let allMessages=[], allHolons=[], synRemaining=2, currentMode='dashboard',
         hoveredAgent=null, canvasRunning=false, synClickPending=false;
 
-    // === Synergize visual lifecycle — single source of truth ===
-    // State machine: 'idle' → 'burst' → 'connecting' → 'fading' → 'idle'
-    // Every transition goes through enter*() and is logged.
-    const SynState={
-        phase:'idle',
-        holonId:null,            // set after POST resolves; null during initial burst
-        burstStartedAt:0,
-        fadeStartedAt:0,
-        missCount:0,             // consecutive polls where our holon is absent from feed
-        connections:{},          // key "a|b" (normalized, sorted) → {bornAt, diedAt?}
-        participants:new Set(),  // normalized names in our holon this poll (node highlighting)
-    };
-    const SYN_BURST_MS=4000;
-    const SYN_FADE_MS=2500;
-    const SYN_CONN_IN_MS=800;
-    const SYN_CONN_OUT_MS=600;
-    const SYN_POLL_FAST_MS=3000;
-    const SYN_POLL_IDLE_MS=8000;
-    const SYN_MAX_MISSES=3;
-    const SYN_HARD_CAP_MS=5*60*1000;
-
-    function logPhase(from,to,reason){console.log(`[syn] ${from} → ${to}`,{reason,holonId:SynState.holonId,t:Math.round(performance.now())});}
-    function logConn(action,key){console.log(`[syn] conn ${action} ${key}`);}
-
-    function enterBurst(holonId){
-        const from=SynState.phase;
-        SynState.phase='burst';
-        SynState.holonId=holonId;
-        SynState.burstStartedAt=performance.now();
-        SynState.fadeStartedAt=0;
-        SynState.missCount=0;
-        SynState.connections={};
-        SynState.participants=new Set();
-        logPhase(from,'burst','click');
-        setSynPollRate(SYN_POLL_FAST_MS);
-    }
-    function enterConnecting(){
-        if(SynState.phase!=='burst')return;
-        SynState.phase='connecting';
-        logPhase('burst','connecting','burst-elapsed');
-    }
-    function enterFading(reason){
-        if(SynState.phase==='idle'||SynState.phase==='fading')return;
-        const from=SynState.phase;
-        SynState.phase='fading';
-        SynState.fadeStartedAt=performance.now();
-        logPhase(from,'fading',reason);
-    }
-    function enterIdle(){
-        const from=SynState.phase;
-        SynState.phase='idle';
-        SynState.holonId=null;
-        SynState.connections={};
-        SynState.participants=new Set();
-        SynState.missCount=0;
-        SynState.burstStartedAt=0;
-        SynState.fadeStartedAt=0;
-        logPhase(from,'idle','reset');
-        stopSynGlow();
-        setSynPollRate(SYN_POLL_IDLE_MS);
-    }
-
-    // Single managed loadData interval — rate swaps based on phase.
-    let synPollInterval=null;
-    function setSynPollRate(ms){
-        if(synPollInterval)clearInterval(synPollInterval);
-        synPollInterval=setInterval(loadData,ms);
-    }
+    // Fractal lifecycle state
+    let synHolonId=null;           // holon ID of the active synergize cycle
+    let synPhase='idle';           // 'idle' | 'burst' | 'connecting' | 'complete' | 'fading'
+    let synBurstStart=0;           // timestamp when burst started
+    let activeConnections={};      // key: "AgentA|AgentB" → {alpha:1, birthTime:timestamp}
+    let synFadeAlpha=1;            // fade multiplier during 'fading' phase
+    let prevParticipants=new Set();// track which agents have connected so far
 
     // Feed holarchy state
     let expandedOldHolons=new Set(); // IDs of old holons expanded in feed
@@ -272,6 +211,22 @@
 
     // Render diff cache — skip innerHTML writes when output is byte-identical
     const prevRender={feedMessages:'',feedOrbit:'',dashAgentGrid:'',dashThreads:''};
+
+    // Synergize burst polling (replaces the old setTimeout cascade)
+    let synBurstInterval=null;
+    let synBurstStartedAt=0;
+    const SYN_BURST_MAX_MS=5*60*1000; // safety cap: stop burst after 5 min even if holon never completes
+    function startSynBurst(){
+        if(synBurstInterval)return;
+        synBurstStartedAt=performance.now();
+        synBurstInterval=setInterval(()=>{
+            if(performance.now()-synBurstStartedAt>SYN_BURST_MAX_MS){stopSynBurst();return;}
+            loadData();
+        },3000);
+    }
+    function stopSynBurst(){
+        if(synBurstInterval){clearInterval(synBurstInterval);synBurstInterval=null;}
+    }
 
     function norm(n){return n.replace(/[\s$]+/g,'').toLowerCase()}
     function getColor(n){const x=norm(n);const a=agents.find(a=>norm(a.id)===x||norm(a.name)===x);return a?a.color:'#888'}
@@ -306,11 +261,11 @@
         const btn=document.getElementById('syn-btn');
         const core=document.querySelector('.fractal-core');
         // Button enabled only if remaining > 0 AND not currently running a cycle
-        if(SynState.phase==='idle'&&synRemaining>0){
+        if(synPhase==='idle'&&synRemaining>0){
             btn.disabled=false;
             btn.classList.remove('locked');
             core.classList.remove('disabled');
-        } else if(SynState.phase==='idle'&&synRemaining<=0){
+        } else if(synPhase==='idle'&&synRemaining<=0){
             btn.disabled=false;
             btn.classList.add('locked');
             core.classList.add('disabled');
@@ -352,99 +307,66 @@
 
     // --- SYNERGIZE: the complete lifecycle ---
     async function synergize(){
-        if(synClickPending||SynState.phase!=='idle')return;
+        if(synClickPending||synPhase!=='idle')return;
         if(synRemaining<=0){openSynPassModal();return;}
+
         synClickPending=true;
 
-        // Immediate UI response — glow, toast, view switch.
+        // Step 1: Immediately start glow, clear old state
+        activeConnections={};
+        prevParticipants=new Set();
+        synFadeAlpha=1;
         startSynGlow();
         showSynToast();
+
+        // Switch to fractal view
         setTimeout(()=>switchMode('fractal'),300);
 
-        // Enter burst with no holonId yet. syncSynFromHolons() is a no-op
-        // until holonId is set, so polls during the POST window do nothing.
-        enterBurst(null);
+        // Step 2: Start burst animation
+        synPhase='burst';
+        synBurstStart=performance.now();
 
         try{
             const r=await fetch('/api/noosphere/synergize',{method:'POST'});
             const data=await r.json();
             synClickPending=false;
             if(!r.ok){
-                enterIdle();
+                synPhase='idle';
+                stopSynGlow();
+                stopSynBurst();
+                // Switch back from fractal view if we auto-switched
                 if(currentMode==='fractal')switchMode('dashboard');
                 const detail=data&&data.detail;
                 if(r.status===429){
+                    // Server says rate-limited — sync counter and open password gate
                     const rem=(detail&&typeof detail.synergize_remaining==='number')?detail.synergize_remaining:0;
                     updateSynUI(rem);
                     openSynPassModal();
                 }else{
-                    console.error('[syn] POST failed:',detail);
+                    console.error('Synergize failed:',detail);
                 }
                 return;
             }
-            SynState.holonId=data.holon_id;
+            // Update counter from server response
+            synHolonId=data.holon_id;
             updateSynUI(data.synergize_remaining);
-            console.log(`[syn] ${data.agent} seeded holon "${(data.topic||'').substring(0,80)}" id=${data.holon_id}`);
+            console.log(`Synergize: ${data.agent} seeded holon — "${data.topic.substring(0,80)}"`);
+
+            // After burst (4s), transition to connecting phase
+            setTimeout(()=>{
+                if(synPhase==='burst')synPhase='connecting';
+            },4000);
+
+            // Poll aggressively while the synergize cycle is live (managed interval, cleared on idle)
+            startSynBurst();
+
         }catch(e){
             synClickPending=false;
-            enterIdle();
-            console.error('[syn] error:',e);
+            synPhase='idle';
+            stopSynGlow();
+            stopSynBurst();
+            console.error('Synergize error:',e);
         }
-    }
-
-    // Sync connection state from the authoritative holon feed.
-    // Called from loadData after allHolons is updated. Pure function of
-    // (current holon's participants) — never accumulates across polls.
-    function syncSynFromHolons(now){
-        if(SynState.phase==='idle'||SynState.phase==='fading')return;
-        // Hard safety cap — never leave burst/connecting stuck forever.
-        if(SynState.burstStartedAt&&now-SynState.burstStartedAt>SYN_HARD_CAP_MS){
-            enterFading('hard-cap');
-            return;
-        }
-        if(!SynState.holonId)return; // POST not yet resolved
-        const holon=allHolons.find(h=>h.id===SynState.holonId);
-        if(!holon){
-            SynState.missCount++;
-            console.log(`[syn] holon missing from feed (${SynState.missCount}/${SYN_MAX_MISSES})`);
-            if(SynState.missCount>=SYN_MAX_MISSES)enterFading('holon-missing');
-            return;
-        }
-        SynState.missCount=0;
-
-        // Derive authoritative normalized participant set for this poll.
-        const parts=(holon.participants||[]).map(norm).filter(Boolean);
-        SynState.participants=new Set(parts);
-
-        // Build desired pair set.
-        const desired=new Set();
-        for(let i=0;i<parts.length;i++){
-            for(let j=i+1;j<parts.length;j++){
-                desired.add([parts[i],parts[j]].sort().join('|'));
-            }
-        }
-        // Birth any missing pairs; revive any that had died (defensive).
-        for(const k of desired){
-            const c=SynState.connections[k];
-            if(!c){
-                SynState.connections[k]={bornAt:now};
-                logConn('+',k);
-            }else if(c.diedAt){
-                delete c.diedAt;
-                c.bornAt=now;
-                logConn('↻',k);
-            }
-        }
-        // Mark any present-but-not-desired as dying.
-        for(const k of Object.keys(SynState.connections)){
-            const c=SynState.connections[k];
-            if(!desired.has(k)&&!c.diedAt){
-                c.diedAt=now;
-                logConn('−',k);
-            }
-        }
-
-        if(holon.status==='complete')enterFading('api-complete');
     }
 
     // --- Data loading ---
@@ -461,7 +383,7 @@
                 fetch('/api/noosphere/synergize/status').then(r=>r.ok?r.json():null).catch(()=>null)
             ]);
             // Sync synergize remaining from server (only when idle, don't stomp live cycles)
-            if(synStat&&typeof synStat.synergize_remaining==='number'&&SynState.phase==='idle'){
+            if(synStat&&typeof synStat.synergize_remaining==='number'&&synPhase==='idle'){
                 updateSynUI(synStat.synergize_remaining);
             }
             // Drop if a newer response has already been applied
@@ -491,8 +413,41 @@
                 a.msgCount=agentMsgCount[a.id]||agentMsgCount[a.name]||0;
             });
 
-            // Sync synergize visual state from authoritative holon feed.
-            syncSynFromHolons(performance.now());
+            // --- Fractal lifecycle: update connections based on holon data ---
+            if(synHolonId&&(synPhase==='burst'||synPhase==='connecting')){
+                const sh=allHolons.find(h=>h.id===synHolonId);
+                if(sh){
+                    const parts=sh.participants||[];
+                    const now=performance.now();
+                    // Build connections only between agents who have contributed
+                    // Each new participant triggers new connection lines to all existing participants
+                    parts.forEach(p=>{
+                        if(!prevParticipants.has(p)){
+                            // New participant — connect to all existing ones
+                            prevParticipants.forEach(existing=>{
+                                const key=[p,existing].sort().join('|');
+                                if(!activeConnections[key]){
+                                    activeConnections[key]={alpha:0,birthTime:now};
+                                }
+                            });
+                            prevParticipants.add(p);
+                        }
+                    });
+                    // Smoothly fade in new connections
+                    Object.values(activeConnections).forEach(c=>{
+                        if(c.alpha<1)c.alpha=Math.min(1,(now-c.birthTime)/800);
+                    });
+
+                    // Check if holon completed — trigger fade phase
+                    if(sh.status==='complete'){
+                        synPhase='fading';
+                        synFadeAlpha=1;
+                    }
+                }
+            }
+
+            // Handle fade phase
+            // (actual fade happens in drawFractal via requestAnimationFrame)
 
             renderDashboard();renderFeed();
         }catch(e){console.error('loadData error:',e)}
@@ -632,93 +587,6 @@
         return{x:cx+Math.cos(angle)*radius,y:cy+Math.sin(angle)*radius}
     }
 
-    function participantIndex(normalizedName){
-        return agents.findIndex(x=>norm(x.id)===normalizedName||norm(x.name)===normalizedName);
-    }
-
-    // Burst: pure cosmetic animation. Reads only SynState.phase and
-    // burstStartedAt; never touches connection data.
-    function drawBurst(ctx,now){
-        if(SynState.phase!=='burst')return;
-        const elapsed=(now-SynState.burstStartedAt)/1000;
-        if(elapsed>=SYN_BURST_MS/1000){enterConnecting();return;}
-        const burstAlpha=elapsed>3?Math.max(0,1-(elapsed-3)):1;
-        const coreR=radius*0.28;
-        agents.forEach((a,i)=>{
-            const p=agentPos(i);
-            const pulse=0.5+0.5*Math.sin(time*12+i);
-            ctx.globalAlpha=burstAlpha;
-            ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(p.x,p.y);
-            ctx.strokeStyle=`rgba(201,168,76,${(0.4+pulse*0.5)*burstAlpha})`;
-            ctx.lineWidth=2+pulse*2;ctx.stroke();
-            const t2=(elapsed*0.8+i*0.1)%1;
-            const bx=cx+(p.x-cx)*t2;const by=cy+(p.y-cy)*t2;
-            ctx.beginPath();ctx.arc(bx,by,3+pulse*2,0,Math.PI*2);
-            ctx.fillStyle=`rgba(201,168,76,${(0.6+pulse*0.4)*burstAlpha})`;ctx.fill();
-        });
-        const cPulse=0.5+0.5*Math.sin(time*8);
-        ctx.globalAlpha=burstAlpha;
-        ctx.beginPath();ctx.arc(cx,cy,coreR+10+cPulse*15,0,Math.PI*2);
-        const bg=ctx.createRadialGradient(cx,cy,coreR,cx,cy,coreR+25);
-        bg.addColorStop(0,`rgba(201,168,76,${(0.25+cPulse*0.2)*burstAlpha})`);
-        bg.addColorStop(1,'transparent');ctx.fillStyle=bg;ctx.fill();
-        ctx.globalAlpha=1;
-    }
-
-    // Connections: data-driven, renders from SynState.connections.
-    // Alpha = fadeIn(bornAt) * fadeOut(diedAt) * phaseMult(fade).
-    function drawSynConnections(ctx,now){
-        if(SynState.phase==='idle'||SynState.phase==='burst')return;
-        const phaseMult=SynState.phase==='fading'
-            ?Math.max(0,1-(now-SynState.fadeStartedAt)/SYN_FADE_MS)
-            :1;
-        if(SynState.phase==='fading'&&phaseMult<=0){enterIdle();return;}
-
-        for(const[key,conn]of Object.entries(SynState.connections)){
-            const[a,b]=key.split('|');
-            const ai=participantIndex(a);
-            const bi=participantIndex(b);
-            if(ai<0||bi<0)continue;
-            const fadeIn=Math.min(1,(now-conn.bornAt)/SYN_CONN_IN_MS);
-            const fadeOut=conn.diedAt?Math.max(0,1-(now-conn.diedAt)/SYN_CONN_OUT_MS):1;
-            const alpha=fadeIn*fadeOut*phaseMult;
-            if(alpha<=0)continue;
-
-            const pa=agentPos(ai),pb=agentPos(bi);
-            const mx=cx+(pa.x+pb.x-2*cx)*0.3,my=cy+(pa.y+pb.y-2*cy)*0.3;
-
-            const grad=ctx.createLinearGradient(pa.x,pa.y,pb.x,pb.y);
-            grad.addColorStop(0,agents[ai].color+'80');
-            grad.addColorStop(1,agents[bi].color+'80');
-            ctx.globalAlpha=alpha;
-            ctx.beginPath();ctx.moveTo(pa.x,pa.y);ctx.quadraticCurveTo(mx,my,pb.x,pb.y);
-            ctx.strokeStyle=grad;ctx.lineWidth=1.5;ctx.stroke();
-
-            const pt=(time*0.5+conn.bornAt*0.001)%1;
-            const px=(1-pt)*(1-pt)*pa.x+2*(1-pt)*pt*mx+pt*pt*pb.x;
-            const py=(1-pt)*(1-pt)*pa.y+2*(1-pt)*pt*my+pt*pt*pb.y;
-            ctx.globalAlpha=0.6*alpha;
-            ctx.beginPath();ctx.arc(px,py,2.5,0,Math.PI*2);
-            ctx.fillStyle='#fff';ctx.fill();
-
-            const pt2=(time*0.5+conn.bornAt*0.001+0.5)%1;
-            const px2=(1-pt2)*(1-pt2)*pa.x+2*(1-pt2)*pt2*mx+pt2*pt2*pb.x;
-            const py2=(1-pt2)*(1-pt2)*pa.y+2*(1-pt2)*pt2*my+pt2*pt2*pb.y;
-            ctx.beginPath();ctx.arc(px2,py2,1.5,0,Math.PI*2);
-            ctx.fillStyle='rgba(201,168,76,0.8)';ctx.fill();
-
-            ctx.globalAlpha=1;
-        }
-
-        // Reap fully-faded dead connections during connecting phase only.
-        if(SynState.phase==='connecting'){
-            for(const k of Object.keys(SynState.connections)){
-                const c=SynState.connections[k];
-                if(c.diedAt&&(now-c.diedAt)>=SYN_CONN_OUT_MS)delete SynState.connections[k];
-            }
-        }
-    }
-
     function drawFractal(){
         if(!canvasRunning)return;
         time+=0.008;
@@ -745,20 +613,117 @@
             ctx.fillStyle=cg;ctx.fill();ctx.strokeStyle='rgba(201,168,76,0.2)';ctx.lineWidth=1.5;ctx.stroke();
         }
 
-        // === Synergize visuals ===
-        drawBurst(ctx,now);
-        drawSynConnections(ctx,now);
+        // === PHASE: BURST (0-4 seconds) ===
+        if(synPhase==='burst'){
+            const elapsed=(now-synBurstStart)/1000;
+            // Fade burst out over last second (3-4s)
+            const burstAlpha=elapsed>3?Math.max(0,1-(elapsed-3)):1;
+            if(burstAlpha>0){
+                agents.forEach((a,i)=>{
+                    const p=agentPos(i);
+                    const pulse=0.5+0.5*Math.sin(time*12+i);
+                    ctx.globalAlpha=burstAlpha;
+                    ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(p.x,p.y);
+                    ctx.strokeStyle=`rgba(201,168,76,${(0.4+pulse*0.5)*burstAlpha})`;
+                    ctx.lineWidth=2+pulse*2;ctx.stroke();
+                    // Traveling particle
+                    const t2=(elapsed*0.8+i*0.1)%1;
+                    const bx=cx+(p.x-cx)*t2;const by=cy+(p.y-cy)*t2;
+                    ctx.beginPath();ctx.arc(bx,by,3+pulse*2,0,Math.PI*2);
+                    ctx.fillStyle=`rgba(201,168,76,${(0.6+pulse*0.4)*burstAlpha})`;ctx.fill();
+                });
+                // Center radial pulse
+                const cPulse=0.5+0.5*Math.sin(time*8);
+                ctx.globalAlpha=burstAlpha;
+                ctx.beginPath();ctx.arc(cx,cy,coreR+10+cPulse*15,0,Math.PI*2);
+                const bg=ctx.createRadialGradient(cx,cy,coreR,cx,cy,coreR+25);
+                bg.addColorStop(0,`rgba(201,168,76,${(0.25+cPulse*0.2)*burstAlpha})`);
+                bg.addColorStop(1,'transparent');ctx.fillStyle=bg;ctx.fill();
+                ctx.globalAlpha=1;
+            }
+        }
+
+        // === PHASE: CONNECTING / COMPLETE — draw agent-to-agent connections ===
+        if(synPhase==='connecting'||synPhase==='fading'){
+            const fadeMult=synPhase==='fading'?synFadeAlpha:1;
+            Object.entries(activeConnections).forEach(([key,conn])=>{
+                const[a,b]=key.split('|');
+                const ai=agents.findIndex(x=>x.id===a||x.name===a);
+                const bi=agents.findIndex(x=>x.id===b||x.name===b);
+                if(ai<0||bi<0)return;
+                const pa=agentPos(ai),pb=agentPos(bi);
+                const mx=cx+(pa.x+pb.x-2*cx)*0.3,my=cy+(pa.y+pb.y-2*cy)*0.3;
+                const alpha=conn.alpha*fadeMult;
+
+                // Connection curve
+                const grad=ctx.createLinearGradient(pa.x,pa.y,pb.x,pb.y);
+                grad.addColorStop(0,agents[ai].color+'80');
+                grad.addColorStop(1,agents[bi].color+'80');
+                ctx.globalAlpha=alpha;
+                ctx.beginPath();ctx.moveTo(pa.x,pa.y);ctx.quadraticCurveTo(mx,my,pb.x,pb.y);
+                ctx.strokeStyle=grad;ctx.lineWidth=1.5;ctx.stroke();
+
+                // Traveling particle
+                const pt=(time*0.5+conn.birthTime*0.001)%1;
+                const px=(1-pt)*(1-pt)*pa.x+2*(1-pt)*pt*mx+pt*pt*pb.x;
+                const py=(1-pt)*(1-pt)*pa.y+2*(1-pt)*pt*my+pt*pt*pb.y;
+                ctx.globalAlpha=0.6*alpha;
+                ctx.beginPath();ctx.arc(px,py,2.5,0,Math.PI*2);
+                ctx.fillStyle='#fff';ctx.fill();
+
+                // Second particle going opposite direction for fullness
+                const pt2=(time*0.5+conn.birthTime*0.001+0.5)%1;
+                const px2=(1-pt2)*(1-pt2)*pa.x+2*(1-pt2)*pt2*mx+pt2*pt2*pb.x;
+                const py2=(1-pt2)*(1-pt2)*pa.y+2*(1-pt2)*pt2*my+pt2*pt2*pb.y;
+                ctx.beginPath();ctx.arc(px2,py2,1.5,0,Math.PI*2);
+                ctx.fillStyle='rgba(201,168,76,0.8)';ctx.fill();
+
+                ctx.globalAlpha=1;
+            });
+
+            // Handle fade animation
+            if(synPhase==='fading'){
+                synFadeAlpha-=0.006; // ~2.5 seconds to fully fade
+                if(synFadeAlpha<=0){
+                    // Reset complete — clean state
+                    synFadeAlpha=1;
+                    synPhase='idle';
+                    synHolonId=null;
+                    activeConnections={};
+                    prevParticipants=new Set();
+                    stopSynGlow();
+                    stopSynBurst();
+                }
+            }
+        }
+
+        // Also draw connections during burst phase if any came in early
+        if(synPhase==='burst'&&Object.keys(activeConnections).length>0){
+            Object.entries(activeConnections).forEach(([key,conn])=>{
+                const[a,b]=key.split('|');
+                const ai=agents.findIndex(x=>x.id===a||x.name===a);
+                const bi=agents.findIndex(x=>x.id===b||x.name===b);
+                if(ai<0||bi<0)return;
+                const pa=agentPos(ai),pb=agentPos(bi);
+                const mx=cx+(pa.x+pb.x-2*cx)*0.3,my=cy+(pa.y+pb.y-2*cy)*0.3;
+                ctx.globalAlpha=conn.alpha*0.5; // subtle during burst
+                const grad=ctx.createLinearGradient(pa.x,pa.y,pb.x,pb.y);
+                grad.addColorStop(0,agents[ai].color+'60');grad.addColorStop(1,agents[bi].color+'60');
+                ctx.beginPath();ctx.moveTo(pa.x,pa.y);ctx.quadraticCurveTo(mx,my,pb.x,pb.y);
+                ctx.strokeStyle=grad;ctx.lineWidth=1.5;ctx.stroke();
+                ctx.globalAlpha=1;
+            });
+        }
 
         // === AGENTS — always drawn on top ===
-        const synActive=SynState.phase!=='idle';
         agents.forEach((a,i)=>{
             const p=agentPos(i);a._x=p.x;a._y=p.y;
             const hov=hoveredAgent===i;
-            const isParticipating=SynState.participants.has(norm(a.id))||SynState.participants.has(norm(a.name));
-            const sr=hov?28:(isParticipating&&synActive?24:22);
+            const isParticipating=prevParticipants.has(a.id)||prevParticipants.has(a.name);
+            const sr=hov?28:(isParticipating&&synPhase!=='idle'?24:22);
 
             // Glow halo — show for conversed agents, hovered, or actively participating
-            if(hov||(isParticipating&&synActive)){
+            if(hov||(isParticipating&&synPhase!=='idle')){
                 ctx.beginPath();ctx.arc(p.x,p.y,sr+12,0,Math.PI*2);
                 const g=ctx.createRadialGradient(p.x,p.y,sr,p.x,p.y,sr+12);
                 g.addColorStop(0,a.color+'40');g.addColorStop(1,'transparent');
@@ -776,15 +741,15 @@
             g2.addColorStop(0,'rgba(255,255,255,0.2)');g2.addColorStop(0.35,a.color+'ee');
             g2.addColorStop(0.75,a.color+'aa');g2.addColorStop(1,a.color+'55');
             ctx.fillStyle=g2;ctx.fill();
-            ctx.strokeStyle=hov?'#fff':(isParticipating&&synActive?a.color:a.color+'80');
-            ctx.lineWidth=hov?2:(isParticipating&&synActive?1.5:1);ctx.stroke();
+            ctx.strokeStyle=hov?'#fff':(isParticipating&&synPhase!=='idle'?a.color:a.color+'80');
+            ctx.lineWidth=hov?2:(isParticipating&&synPhase!=='idle'?1.5:1);ctx.stroke();
 
             // Initials
             ctx.fillStyle='#fff';ctx.font=`600 ${hov?12:10}px 'JetBrains Mono',monospace`;
             ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(a.ini,p.x,p.y);
             // Name (hidden on very small screens)
             if(W>=480||hov){
-                ctx.fillStyle=hov?'#fff':(isParticipating&&synActive?'rgba(216,220,232,0.9)':'rgba(216,220,232,0.6)');
+                ctx.fillStyle=hov?'#fff':(isParticipating&&synPhase!=='idle'?'rgba(216,220,232,0.9)':'rgba(216,220,232,0.6)');
                 ctx.font=`${hov||isParticipating?600:400} 10px 'Cormorant Garamond',serif`;
                 ctx.fillText(a.name,p.x,p.y+sr+14);
             }
@@ -886,7 +851,7 @@
     // --- Init ---
     const urlMode=new URLSearchParams(window.location.search).get('mode');
     if(urlMode&&['dashboard','fractal','feed'].includes(urlMode))switchMode(urlMode);
-    loadData();setSynPollRate(SYN_POLL_IDLE_MS);
+    loadData();setInterval(loadData,8000);
     </script>
 </body>
 </html>
